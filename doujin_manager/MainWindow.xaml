@@ -1,0 +1,108 @@
+﻿<Window x:Class="doujin_manager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:doujin_manager"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="25"/>
+        </Grid.RowDefinitions>
+        <TabControl x:Name="tabControl" SelectionChanged="tabControlSelectionChanged">
+            <TabItem Header="すべて">
+                <Grid>
+                    <DataGrid x:Name="allbooks" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="*"/>
+                            <DataGridTextColumn Header="作者" Binding="{Binding Artist}" Width="*"/>
+                            <DataGridTextColumn Header="サークル" Binding="{Binding Circle}" Width="*"/>
+                            <DataGridTextColumn Header="発行日" Binding="{Binding DateStr}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="作者別">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <ListBox x:Name="artistList" Grid.Column="0" SelectionChanged="artistListSelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Item1}" />
+                                    <TextBlock Text=" (" />
+                                    <TextBlock Text="{Binding Item2}" />
+                                    <TextBlock Text=")"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <DataGrid x:Name="booksOfArtist" Grid.Column="1" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="*"/>
+                            <DataGridTextColumn Header="サークル" Binding="{Binding Circle}" Width="*"/>
+                            <DataGridTextColumn Header="発行日" Binding="{Binding DateStr}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="同人誌登録">
+                <Grid Margin="60,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="200"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="30"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0"  >タイトル</TextBlock>
+                    <TextBlock Grid.Row="1"  >作者</TextBlock>
+                    <TextBlock Grid.Row="2"  >サークル</TextBlock>
+                    <TextBlock Grid.Row="3" >発行日</TextBlock>
+                    
+                    <CheckBox Grid.Row="1" Grid.Column="1" x:Name="checkNewArtist">新規</CheckBox>
+                    <CheckBox Grid.Row="2" Grid.Column="1" x:Name="checkNewCircle">新規</CheckBox>
+                    
+                    <TextBox Grid.Row="0" Grid.Column="2" x:Name="textTitle" Margin="4,0,4,0"/>
+                    <TextBox Grid.Row="1" Grid.Column="2" x:Name="textArtist" Margin="4,4,4,0" Height="30" VerticalAlignment="Top" TextChanged="suggestArtist"></TextBox>
+                    <TextBox Grid.Row="2" Grid.Column="2" x:Name="textCircle" Margin="4,4,4,0" Height="30" VerticalAlignment="Top" TextChanged="suggestCircle"></TextBox>
+                    <DatePicker Grid.Row="3" Grid.Column="2" x:Name="pickDate" Margin="4, 0" Height="30"/>
+
+                    <Grid Grid.Row="1" Grid.Column="3" Margin="4,4,4,4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="20"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock>候補</TextBlock>
+                        <ListBox Grid.Row="1" x:Name="artistCandList"   SelectionChanged="artistCandidateSelectionChanged" SelectedValuePath="Id"/>
+                    </Grid>
+                    <Grid Grid.Row="2" Grid.Column="3"  Margin="4,4,4,4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="20"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock>候補</TextBlock>
+                        <ListBox Grid.Row="1" x:Name="circleCandList" SelectionChanged="circleCandidateSelectionChanged"  SelectedValuePath="Id"/>
+                    </Grid>
+                    <Button Grid.Row="4" Grid.Column="3" Margin="4,4,4,4" Click="registerNewBook">登録</Button>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <StatusBar Grid.Row="1">
+            <StatusBarItem>
+                <TextBlock x:Name="statusText"></TextBlock>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
