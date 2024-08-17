@@ -45,7 +45,7 @@ namespace doujin_manager
                 new("@title", Title),
                 new("@artist", Artist.Id),
                 new("@circle", Circle.Id),
-                new("@date", DateStr),
+                new("@date", DateStr != null ? DateStr : DBNull.Value),
             };
         }
     }

@@ -182,7 +182,7 @@ namespace doujin_manager
                         Title = r.GetString("title"),
                         Artist = ar,
                         Circle = ci,
-                        Date = DateOnly.FromDateTime(r.GetDateTime("date"))
+                        Date = r.IsDBNull("date") ? null: DateOnly.FromDateTime(r.GetDateTime("date"))
                     });
                 }
                 return books;

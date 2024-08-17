@@ -54,7 +54,7 @@ namespace doujin_manager
             List<ArtistModel> artists = accessor.GetAllArtists();
             Dictionary<int, int> counts = accessor.GetBookCountOfArtist();
 
-            List<Tuple<ArtistModel, int>> items = artists.ConvertAll(a => new Tuple<ArtistModel, int>(a, counts[a.Id]));
+            List<Tuple<ArtistModel, int>> items = artists.ConvertAll(a => new Tuple<ArtistModel, int>(a, counts.TryGetValue(a.Id, out int value) ? value : 0));
             artistList.ItemsSource = items;
             statusText.Text = string.Format("合計 {0} 人 登録されています。", artistList.Items.Count);
         }
@@ -112,10 +112,14 @@ namespace doujin_manager
                 return;
             }
             isUserHavingControl = false;
+            checkNewArtist.IsChecked = false;
             int cur = circleCandList.SelectedValue == null ? -1 : (int)circleCandList.SelectedValue;
 
             List<CircleModel> circles = accessor.GetRelatedCircles(ar);
-            circleCandList.ItemsSource = circles;
+            if (circles.Count > 0)
+            {
+                circleCandList.ItemsSource = circles;
+            }
 
             if (circles.Exists(c => c.Id == cur))
             {
@@ -132,10 +136,14 @@ namespace doujin_manager
                 return;
             }
             isUserHavingControl = false;
+            checkNewCircle.IsChecked = false;  
             int cur = artistCandList.SelectedValue == null ? -1 : (int)artistCandList.SelectedValue;
 
             List<ArtistModel> artists = accessor.GetRelatedArtists(ci);
-            artistCandList.ItemsSource = artists;
+            if (artists.Count > 0)
+            {
+                artistCandList.ItemsSource = artists;
+            }
 
             if(artists.Exists(a => a.Id == cur))
             {
