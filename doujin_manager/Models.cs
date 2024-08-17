@@ -3,7 +3,7 @@ using System;
 
 namespace doujin_manager
 {
-    public class ArtistModel
+    public class ArtistModel: IComparable
     {
         public int Id { get; set; } = -1;
         public required string Name { get; set; }
@@ -12,15 +12,25 @@ namespace doujin_manager
         {
             return Name;
         }
+
+        public int CompareTo(object? other)
+        {
+            return Name.CompareTo(other?.ToString());
+        }
     }
 
-    public class CircleModel
+    public class CircleModel: IComparable
     {
         public int Id { get; set; } = -1;
         public required string Name { get; set; }
         public override string ToString()
         {
             return Name;
+        }
+
+        public int CompareTo(object? other)
+        {
+            return Name.CompareTo(other?.ToString());
         }
     }
 
