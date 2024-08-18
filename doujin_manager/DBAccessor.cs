@@ -78,7 +78,11 @@ namespace doujin_manager
         // insertions
         private static int getInsertedId(SqliteConnection conn)
         {
-            SqliteCommand c = new("select last_insert_rowid();", conn);
+            return getInsertedId(conn, null);
+        }
+        private static int getInsertedId(SqliteConnection conn, SqliteTransaction? t)
+        {
+            SqliteCommand c = new("select last_insert_rowid();", conn, t);
             SqliteDataReader r = c.ExecuteReader();
             r.Read();
             return r.GetInt32(0);
@@ -89,11 +93,19 @@ namespace doujin_manager
             using(SqliteConnection conn = new(connStr))
             { 
                 conn.Open();
-                SqliteCommand c = new("insert into books (title, artist, circle, date) values (@title, @artist, @circle, @date);", conn);
-                c.Parameters.AddRange(book.GetQueryParams());
-                c.ExecuteNonQuery();
+                using (SqliteTransaction t = conn.BeginTransaction())
+                {
+                    SqliteCommand c = new("insert into books (title, circle, date) values (@title, @circle, @date);", conn, t);
+                    c.Parameters.AddRange(book.GetQueryParams());
+                    c.ExecuteNonQuery();
+                    book.Id = getInsertedId(conn, t);
 
-                return getInsertedId(conn);
+                    insertRelation(conn, t, book);
+
+                    t.Commit();
+                }
+
+                return book.Id;
             }
         }
 
@@ -123,22 +135,36 @@ namespace doujin_manager
             }
         }
 
-        public void InsertRelation(ArtistModel artist, CircleModel circle)
+        private void insertRelation(SqliteConnection conn, SqliteTransaction t, BookModel book)
         {
-            using(SqliteConnection conn = new(connStr))
+            SqliteCommand q = new("select * from artist_circle_rel where artist_id = @artist and circle_id = @circle;", conn, t);
+            SqliteCommand cc = new("insert into artist_circle_rel (artist_id, circle_id) values (@artist, @circle);", conn, t);
+            SqliteCommand cb = new("insert into book_artist_rel (book_id, artist_id) values(@book, @artist);", conn, t);
+
+            SqliteParameter pa = new() { ParameterName = "@artist" };
+            SqliteParameter pb = new() { ParameterName = "@book", Value = book.Id };
+            SqliteParameter pc = new() { ParameterName = "@circle", Value = book.Circle.Id };
+
+            q.Parameters.Add(pa);
+            q.Parameters.Add(pc);
+            cc.Parameters.Add(pa);
+            cc.Parameters.Add(pc);
+            cb.Parameters.Add(pa);
+            cb.Parameters.Add(pb);
+
+            foreach (ArtistModel ar in book.Artists)
             {
-                conn.Open();
-                SqliteCommand q = new("select * from artist_circle_rel where artist_id = @artist and circle_id = @circle;", conn);
-                SqliteParameter[] p = new SqliteParameter[] { new("@artist", artist.Id), new("@circle", circle.Id) };
-                q.Parameters.AddRange(p);
+                pa.Value = ar.Id;
+                // insert book relation first
+                cb.ExecuteNonQuery();
+
+                // check if artist-circle relation already exists
                 SqliteDataReader r = q.ExecuteReader();
-                if (r.HasRows)
+                if (!r.HasRows)
                 {
-                    return;
+                    cc.ExecuteNonQuery();
                 }
-                SqliteCommand c = new("insert into artist_circle_rel (artist_id, circle_id) values (@artist, @circle);", conn);
-                c.Parameters.AddRange(p);
-                c.ExecuteNonQuery();
+                r.Close();
             }
         }
 
@@ -166,33 +192,37 @@ namespace doujin_manager
             {
                 conn.Open();
                 SqliteCommand c = new(
-                    @"select books.id, title, artist, circle, date, artist.name as aname, circle.name as cname from books
-                      inner join artist on books.artist = artist.id 
+                    @"select books.id, title, artist.id as artist, artist.name as aname, circle, circle.name as cname, date 
+                      from book_artist_rel 
+                      inner join books on book_id = books.id 
+                      inner join artist on artist_id = artist.id
                       inner join circle on books.circle = circle.id;", conn);
-                
-                List<BookModel> books = new();
+
+                ModelDict<int, BookModel> bookDict = new();
                 ModelDict<int, ArtistModel> artistDict = new();
                 ModelDict<int, CircleModel> circleDict = new();
 
                 SqliteDataReader r = c.ExecuteReader();
                 while(r.Read())
                 {
+                    int bookId = r.GetInt32("id");
                     int artistId = r.GetInt32("artist");
                     int circleId = r.GetInt32("circle");
 
                     ArtistModel ar = artistDict.GetOrNull(artistId) ?? artistDict.Add(artistId, new ArtistModel { Id = artistId, Name = r.GetString("aname") });
                     CircleModel ci = circleDict.GetOrNull(circleId) ?? circleDict.Add(circleId, new CircleModel { Id = circleId, Name = r.GetString("cname") });
 
-                    books.Add(new BookModel
+                    BookModel b = bookDict.GetOrNull(bookId) ?? bookDict.Add(bookId, new BookModel
                     {
-                        Id = r.GetInt32("id"),
+                        Id = bookId,
                         Title = r.GetString("title"),
-                        Artist = ar,
+                        Artists = new List<ArtistModel>(),
                         Circle = ci,
                         Date = r.IsDBNull("date") ? null: DateOnly.FromDateTime(r.GetDateTime("date"))
                     });
+                    b.Artists.Add(ar);
                 }
-                return books;
+                return bookDict.Values.ToList();
 
             }
         }
@@ -202,9 +232,10 @@ namespace doujin_manager
             {
                 conn.Open();
                 SqliteCommand c = new(
-                    @"select books.id, title, artist, circle, date, circle.name as cname from books 
+                    @"select books.id, title, circle, date, circle.name as cname from book_artist_rel
+                      inner join books on book_id = books.id
                       inner join circle on books.circle = circle.id 
-                      where books.artist = @artist;", conn);
+                      where book_artist_rel.artist_id = @artist;", conn);
                 c.Parameters.AddWithValue("@artist", artist.Id);
                 SqliteDataReader r = c.ExecuteReader();
                    
@@ -218,9 +249,8 @@ namespace doujin_manager
                     {
                         Id = r.GetInt32("id"),
                         Title = r.GetString("title"),
-                        Artist = artist,
                         Circle = ci,
-                        Date = DateOnly.FromDateTime(r.GetDateTime("date"))
+                        Date = r.IsDBNull("date") ? null : DateOnly.FromDateTime(r.GetDateTime("date"))
                     });
                 }
                 return books;
@@ -320,14 +350,14 @@ namespace doujin_manager
             using(SqliteConnection conn = new(connStr))
             {
                 conn.Open();
-                SqliteCommand c = new("select count(artist) as count, artist from books group by artist;", conn);
+                SqliteCommand c = new("select count(artist_id) as count, artist_id from book_artist_rel group by artist_id;", conn);
                 SqliteDataReader r = c.ExecuteReader();
 
                 Dictionary<int, int> count = new();
 
                 while(r.Read())
                 {
-                    count.Add(r.GetInt32("artist"), r.GetInt32("count"));
+                    count.Add(r.GetInt32("artist_id"), r.GetInt32("count"));
                 }
 
                 return count;
