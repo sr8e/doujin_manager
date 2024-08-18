@@ -1,9 +1,10 @@
 ﻿using Microsoft.Data.Sqlite;
 using System;
+using System.Collections.Generic;
 
 namespace doujin_manager
 {
-    public class ArtistModel: IComparable
+    public class ArtistModel : IComparable
     {
         public int Id { get; set; } = -1;
         public required string Name { get; set; }
@@ -19,7 +20,7 @@ namespace doujin_manager
         }
     }
 
-    public class CircleModel: IComparable
+    public class CircleModel : IComparable
     {
         public int Id { get; set; } = -1;
         public required string Name { get; set; }

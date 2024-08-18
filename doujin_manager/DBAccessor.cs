@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.Data.Sqlite;
 
 namespace doujin_manager
 {
@@ -29,7 +29,8 @@ namespace doujin_manager
             {
                 // data source aleady exists, passing
             }
-            connStr = new SqliteConnectionStringBuilder{
+            connStr = new SqliteConnectionStringBuilder
+            {
                 DataSource = path,
             }.ToString();
         }
@@ -90,8 +91,8 @@ namespace doujin_manager
 
         public int InsertBook(BookModel book)
         {
-            using(SqliteConnection conn = new(connStr))
-            { 
+            using (SqliteConnection conn = new(connStr))
+            {
                 conn.Open();
                 using (SqliteTransaction t = conn.BeginTransaction())
                 {
@@ -111,7 +112,7 @@ namespace doujin_manager
 
         public int InsertArtist(ArtistModel artist)
         {
-            using(SqliteConnection conn = new(connStr))
+            using (SqliteConnection conn = new(connStr))
             {
                 conn.Open();
                 SqliteCommand c = new("insert into artist (name) values (@name);", conn);
@@ -171,16 +172,16 @@ namespace doujin_manager
         // retrievals
         public List<ArtistModel> GetAllArtists()
         {
-            using(SqliteConnection conn = new(connStr))
+            using (SqliteConnection conn = new(connStr))
             {
                 conn.Open();
                 SqliteCommand c = new("select * from artist;", conn);
                 SqliteDataReader r = c.ExecuteReader();
 
                 List<ArtistModel> artists = new();
-                while(r.Read())
+                while (r.Read())
                 {
-                    artists.Add(new ArtistModel { Id =  r.GetInt32("id"), Name = r.GetString("name") });
+                    artists.Add(new ArtistModel { Id = r.GetInt32("id"), Name = r.GetString("name") });
                 }
                 return artists;
             }
@@ -188,7 +189,7 @@ namespace doujin_manager
 
         public List<BookModel> GetAllBooks()
         {
-            using(SqliteConnection conn = new(connStr))
+            using (SqliteConnection conn = new(connStr))
             {
                 conn.Open();
                 SqliteCommand c = new(
@@ -203,7 +204,7 @@ namespace doujin_manager
                 ModelDict<int, CircleModel> circleDict = new();
 
                 SqliteDataReader r = c.ExecuteReader();
-                while(r.Read())
+                while (r.Read())
                 {
                     int bookId = r.GetInt32("id");
                     int artistId = r.GetInt32("artist");
@@ -218,7 +219,7 @@ namespace doujin_manager
                         Title = r.GetString("title"),
                         Artists = new List<ArtistModel>(),
                         Circle = ci,
-                        Date = r.IsDBNull("date") ? null: DateOnly.FromDateTime(r.GetDateTime("date"))
+                        Date = r.IsDBNull("date") ? null : DateOnly.FromDateTime(r.GetDateTime("date"))
                     });
                     b.Artists.Add(ar);
                 }
@@ -227,8 +228,9 @@ namespace doujin_manager
             }
         }
 
-        public List<BookModel> GetBooksOfArtist(ArtistModel artist) {
-            using(SqliteConnection conn =new(connStr))
+        public List<BookModel> GetBooksOfArtist(ArtistModel artist)
+        {
+            using (SqliteConnection conn = new(connStr))
             {
                 conn.Open();
                 SqliteCommand c = new(
@@ -238,12 +240,13 @@ namespace doujin_manager
                       where book_artist_rel.artist_id = @artist;", conn);
                 c.Parameters.AddWithValue("@artist", artist.Id);
                 SqliteDataReader r = c.ExecuteReader();
-                   
+
                 List<BookModel> books = new();
                 ModelDict<int, CircleModel> circleDict = new();
-                while(r.Read()) {
+                while (r.Read())
+                {
                     int circleId = r.GetInt32("circle");
-                    CircleModel ci = circleDict.GetOrNull(circleId) ?? circleDict.Add(circleId, new CircleModel { Id =  circleId, Name = r.GetString("cname") });
+                    CircleModel ci = circleDict.GetOrNull(circleId) ?? circleDict.Add(circleId, new CircleModel { Id = circleId, Name = r.GetString("cname") });
 
                     books.Add(new BookModel
                     {
@@ -259,7 +262,7 @@ namespace doujin_manager
 
         public List<ArtistModel> GetArtistsLike(string prefix)
         {
-            using(SqliteConnection conn = new(connStr))
+            using (SqliteConnection conn = new(connStr))
             {
                 conn.Open();
                 SqliteCommand c = new("select * from artist where name like @prefix;", conn);
@@ -267,12 +270,12 @@ namespace doujin_manager
 
                 SqliteDataReader r = c.ExecuteReader();
                 List<ArtistModel> artists = new();
-                
-                while(r.Read())
+
+                while (r.Read())
                 {
                     int id = r.GetInt32("id");
                     string name = r.GetString("name");
-                    artists.Add(new ArtistModel { Id =id, Name = name });
+                    artists.Add(new ArtistModel { Id = id, Name = name });
                 }
                 return artists;
             }
@@ -314,9 +317,9 @@ namespace doujin_manager
 
                 while (r.Read())
                 {
-                    int id=r.GetInt32("id");
+                    int id = r.GetInt32("id");
                     string name = r.GetString("name");
-                    artists.Add(new ArtistModel { Id = id, Name = name });  
+                    artists.Add(new ArtistModel { Id = id, Name = name });
                 }
                 return artists;
             }
@@ -347,7 +350,7 @@ namespace doujin_manager
 
         public Dictionary<int, int> GetBookCountOfArtist()
         {
-            using(SqliteConnection conn = new(connStr))
+            using (SqliteConnection conn = new(connStr))
             {
                 conn.Open();
                 SqliteCommand c = new("select count(artist_id) as count, artist_id from book_artist_rel group by artist_id;", conn);
@@ -355,7 +358,7 @@ namespace doujin_manager
 
                 Dictionary<int, int> count = new();
 
-                while(r.Read())
+                while (r.Read())
                 {
                     count.Add(r.GetInt32("artist_id"), r.GetInt32("count"));
                 }
@@ -366,9 +369,10 @@ namespace doujin_manager
     }
 
     // Dictionary wrapper
-    internal class ModelDict<Tkey, TValue>: Dictionary<Tkey, TValue> where Tkey: notnull where TValue: class{
+    internal class ModelDict<Tkey, TValue> : Dictionary<Tkey, TValue> where Tkey : notnull where TValue : class
+    {
 
-        public new TValue Add(Tkey key,  TValue value)
+        public new TValue Add(Tkey key, TValue value)
         {
             base.Add(key, value);
             return value;
