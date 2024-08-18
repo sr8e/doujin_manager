@@ -38,7 +38,7 @@ namespace doujin_manager
     {
         public int Id { get; set; } = -1;
         public required string Title { get; set; }
-        public required ArtistModel Artist { get; set; }
+        public List<ArtistModel> Artists { get; set; }
         public required CircleModel Circle { get; set; }
         public DateOnly? Date { get; set; }
         public string? DateStr
@@ -49,11 +49,18 @@ namespace doujin_manager
             }
         }
 
+        public string ArtistsStr
+        {
+            get
+            {
+                return string.Join(", ", Artists);
+            }
+        }
+
         public SqliteParameter[] GetQueryParams()
         {
             return new SqliteParameter[]{
                 new("@title", Title),
-                new("@artist", Artist.Id),
                 new("@circle", Circle.Id),
                 new("@date", DateStr != null ? DateStr : DBNull.Value),
             };

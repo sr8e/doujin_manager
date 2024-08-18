@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.Data.Sqlite;
 
@@ -50,7 +51,6 @@ namespace doujin_manager
                       create table if not exists books(
                         id integer primary key autoincrement,
                         title text not null,
-                        artist integer not null,
                         circle integer not null,
                         date date,
                         foreign key(artist) references artist(id),
@@ -62,6 +62,13 @@ namespace doujin_manager
                         foreign key(artist_id) references artist(id),
                         foreign key(circle_id) references circle(id),
                         primary key(artist_id, circle_id)
+                      );
+                      create table if not exists book_artist_rel(
+                        book_id integer not null,
+                        artist_id integer not null,
+                        foreign key(book_id) references books(id),
+                        foreign key(artist_id) references artist(id),
+                        primary key(book_id, artist_id)
                       );", conn
                 );
                 c.ExecuteNonQuery();
