@@ -16,10 +16,10 @@
                 <Grid>
                     <DataGrid x:Name="allbooks" AutoGenerateColumns="False" IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="*"/>
-                            <DataGridTextColumn Header="作者" Binding="{Binding Artist}" Width="*"/>
+                            <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="3*"/>
+                            <DataGridTextColumn Header="作者" Binding="{Binding ArtistsStr}" Width="*"/>
                             <DataGridTextColumn Header="サークル" Binding="{Binding Circle}" Width="*"/>
-                            <DataGridTextColumn Header="発行日" Binding="{Binding DateStr}" Width="*"/>
+                            <DataGridTextColumn Header="発行日" Binding="{Binding DateStr}" Width="120"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -44,9 +44,9 @@
                     </ListBox>
                     <DataGrid x:Name="booksOfArtist" Grid.Column="1" AutoGenerateColumns="False" IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="*"/>
+                            <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="2*"/>
                             <DataGridTextColumn Header="サークル" Binding="{Binding Circle}" Width="*"/>
-                            <DataGridTextColumn Header="発行日" Binding="{Binding DateStr}" Width="*"/>
+                            <DataGridTextColumn Header="発行日" Binding="{Binding DateStr}" Width="120"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
