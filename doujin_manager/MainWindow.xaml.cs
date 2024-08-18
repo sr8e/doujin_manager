@@ -21,6 +21,7 @@ namespace doujin_manager
 
             refreshAllBookList();
             refreshArtistList();
+            resetArtistInputBox();
         }
 
         // debug
@@ -59,6 +60,14 @@ namespace doujin_manager
             statusText.Text = string.Format("合計 {0} 人 登録されています。", artistList.Items.Count);
         }
 
+        private void resetArtistInputBox()
+        {
+            artistInputBox.Children.Clear();
+            artistInputBox.Children.Add(new ArtistInputControl(suggestArtist, artistCandidateSelectionChanged));
+
+            buttonRemoveArtistInput.IsEnabled = false;
+        }
+
         // event handlers
         private void tabControlSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -92,10 +101,31 @@ namespace doujin_manager
             booksOfArtist.ItemsSource = accessor.GetBooksOfArtist(ar);
         }
 
+        private void addArtistInput(object sender, RoutedEventArgs e)
+        {
+            ArtistInputControl control = new(suggestArtist, artistCandidateSelectionChanged);
+            artistInputBox.Children.Add(control);
+            buttonRemoveArtistInput.IsEnabled = true;
+        }
+
+        private void removeArtistInput(object sender, RoutedEventArgs e)
+        {
+            if (artistInputBox.Children.Count == 1)
+            {
+                return;
+            }
+            if (artistInputBox.Children.Count == 2)
+            {
+                buttonRemoveArtistInput.IsEnabled = false;
+            }
+            artistInputBox.Children.RemoveAt(artistInputBox.Children.Count - 1);
+        }
+
         private void suggestArtist(object sender, RoutedEventArgs e)
         {
-            string content = textArtist.Text;
-            artistCandList.ItemsSource = accessor.GetArtistsLike(content);
+            ArtistInputControl aic = (ArtistInputControl)sender;
+            string content = aic.Text;
+            aic.ItemsSource = accessor.GetArtistsLike(content);
         }
 
         private void suggestCircle(object sender, RoutedEventArgs e)
@@ -106,13 +136,14 @@ namespace doujin_manager
 
         private void artistCandidateSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ArtistModel ar = (ArtistModel)artistCandList.SelectedItem;
+            ArtistInputControl aic = (ArtistInputControl)sender;
+            ArtistModel ar = aic.SelectedItem;
             if (!isUserHavingControl || ar == null)
             {
                 return;
             }
             isUserHavingControl = false;
-            checkNewArtist.IsChecked = false;
+            aic.IsChecked = false;
             int cur = circleCandList.SelectedValue == null ? -1 : (int)circleCandList.SelectedValue;
 
             List<CircleModel> circles = accessor.GetRelatedCircles(ar);
@@ -136,61 +167,76 @@ namespace doujin_manager
                 return;
             }
             isUserHavingControl = false;
-            checkNewCircle.IsChecked = false;  
-            int cur = artistCandList.SelectedValue == null ? -1 : (int)artistCandList.SelectedValue;
-
+            checkNewCircle.IsChecked = false;
             List<ArtistModel> artists = accessor.GetRelatedArtists(ci);
-            if (artists.Count > 0)
-            {
-                artistCandList.ItemsSource = artists;
-            }
 
-            if(artists.Exists(a => a.Id == cur))
+            foreach (UIElement elem in artistInputBox.Children)
             {
-                artistCandList.SelectedValue = cur;
+                ArtistInputControl aic = (ArtistInputControl)elem;
+                int cur = aic.SelectedValue;
+
+                if (artists.Count > 0)
+                {
+                    aic.ItemsSource = artists;
+                }
+
+                if (artists.Exists(a => a.Id == cur))
+                {
+                    aic.SelectedValue = cur;
+                }
             }
             isUserHavingControl = true;
         }
 
         private void registerNewBook(object sender, RoutedEventArgs e)
         {
-            if (textTitle.Text.Length == 0) {
+            if (textTitle.Text.Length == 0)
+            {
                 openDialogue("タイトルを入力してください");
                 return;
             }
 
-            ArtistModel ar;
-            if (checkNewArtist.IsChecked != null && (bool)checkNewArtist.IsChecked) {
-                if(textArtist.Text.Length == 0)
-                {
-                    openDialogue("作者名を入力してください");
-                    return;
-                }
-                ar = new ArtistModel { Name = textArtist.Text };
-                int aid = accessor.InsertArtist(ar);
-                ar.Id = aid;
-            } else
+            List<ArtistModel> alist = new();
+            foreach (UIElement elem in artistInputBox.Children)
             {
-                ar = (ArtistModel)artistCandList.SelectedItem;
-                if (ar == null)
+                ArtistModel ar;
+                ArtistInputControl aic = (ArtistInputControl)elem;
+                if (aic.IsChecked)
                 {
-                    openDialogue("作者を選択してください");
-                    return;
+                    if (aic.Text.Length == 0)
+                    {
+                        openDialogue("作者名を入力してください");
+                        return;
+                    }
+                    ar = new ArtistModel { Name = aic.Text };
+                    int aid = accessor.InsertArtist(ar);
+                    ar.Id = aid;
                 }
+                else
+                {
+                    ar = aic.SelectedItem;
+                    if (ar == null)
+                    {
+                        openDialogue("作者を選択してください");
+                        return;
+                    }
+                }
+                alist.Add(ar);
             }
 
             CircleModel ci;
             if (checkNewCircle.IsChecked != null && (bool)checkNewCircle.IsChecked)
             {
-                if(textCircle.Text.Length == 0)
+                if (textCircle.Text.Length == 0)
                 {
                     openDialogue("サークル名を入力してください");
                     return;
                 }
-                ci = new CircleModel { Name= textCircle.Text };
+                ci = new CircleModel { Name = textCircle.Text };
                 int cid = accessor.InsertCircle(ci);
                 ci.Id = cid;
-            } else
+            }
+            else
             {
                 ci = (CircleModel)circleCandList.SelectedItem;
                 if (ci == null)
@@ -206,18 +252,15 @@ namespace doujin_manager
                 DateTime dt_notnull = (DateTime)dt;
                 d = new DateOnly(dt_notnull.Year, dt_notnull.Month, dt_notnull.Day);
             }
-            BookModel b = new() { Title=textTitle.Text, Artist = ar, Circle = ci, Date = d };
-            accessor.InsertBook(b);
-            accessor.InsertRelation(ar, ci);
+            BookModel b = new() { Title = textTitle.Text, Artists = alist, Circle = ci, Date = d };
+            b.Id = accessor.InsertBook(b);
             statusText.Text = "登録に成功しました。";
             // clear fields
             textTitle.Clear();
-            textArtist.Clear();
             textCircle.Clear();
             pickDate.Text = "";
-            artistCandList.ItemsSource = null;
             circleCandList.ItemsSource = null;
-
+            resetArtistInputBox();
         }
     }
 }

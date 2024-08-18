@@ -67,26 +67,25 @@
                         <RowDefinition Height="30"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0"  >タイトル</TextBlock>
-                    <TextBlock Grid.Row="1"  >作者</TextBlock>
+                    <StackPanel Grid.Row="1">
+                        <TextBlock   >作者</TextBlock>
+                        <Button Width="20" Click="addArtistInput">+</Button>
+                        <Button Width="20" x:Name="buttonRemoveArtistInput" IsEnabled="False" Click="removeArtistInput">-</Button>
+                    </StackPanel>
                     <TextBlock Grid.Row="2"  >サークル</TextBlock>
                     <TextBlock Grid.Row="3" >発行日</TextBlock>
-                    
-                    <CheckBox Grid.Row="1" Grid.Column="1" x:Name="checkNewArtist">新規</CheckBox>
+                    <ScrollViewer Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="artistInputBox">
+                        </StackPanel>
+                    </ScrollViewer>
+                
                     <CheckBox Grid.Row="2" Grid.Column="1" x:Name="checkNewCircle">新規</CheckBox>
                     
                     <TextBox Grid.Row="0" Grid.Column="2" x:Name="textTitle" Margin="4,0,4,0"/>
-                    <TextBox Grid.Row="1" Grid.Column="2" x:Name="textArtist" Margin="4,4,4,0" Height="30" VerticalAlignment="Top" TextChanged="suggestArtist"></TextBox>
                     <TextBox Grid.Row="2" Grid.Column="2" x:Name="textCircle" Margin="4,4,4,0" Height="30" VerticalAlignment="Top" TextChanged="suggestCircle"></TextBox>
                     <DatePicker Grid.Row="3" Grid.Column="2" x:Name="pickDate" Margin="4, 0" Height="30"/>
 
-                    <Grid Grid.Row="1" Grid.Column="3" Margin="4,4,4,4">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="20"/>
-                            <RowDefinition/>
-                        </Grid.RowDefinitions>
-                        <TextBlock>候補</TextBlock>
-                        <ListBox Grid.Row="1" x:Name="artistCandList"   SelectionChanged="artistCandidateSelectionChanged" SelectedValuePath="Id"/>
-                    </Grid>
+                    
                     <Grid Grid.Row="2" Grid.Column="3"  Margin="4,4,4,4">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20"/>
